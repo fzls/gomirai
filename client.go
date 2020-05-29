@@ -4,12 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
-
-	"github.com/sirupsen/logrus"
 )
 
 // Client 用于服务的Client
@@ -83,45 +82,6 @@ func (client *Client) ReleaseAllSession() {
 	}
 }
 
-// 用于内部的Post请求
-func (client *Client) httpPost(path string, postBody interface{}, respS interface{}) error {
-	bytesData, _ := json.Marshal(postBody)
-	req, err := http.NewRequest("POST", client.Address+path, bytes.NewReader(bytesData))
-	if err != nil {
-		return err
-	}
-	req.Header.Add("Content-Type", "application/json; charset=utf-8")
-	req.Header.Add("Connection", "Keep-Alive")
-	resp, err := client.HTTPClient.Do(req)
-	if err != nil {
-		return err
-	}
-
-	defer resp.Body.Close()
-	bytesData, err = ioutil.ReadAll(resp.Body)
-
-	logrus.Debug(string(bytesData))
-	return json.Unmarshal(bytesData, respS)
-}
-
-// 用于内部的Get请求
-func (client *Client) httpGet(path string, respS interface{}) error {
-	req, err := http.NewRequest("GET", client.Address+path, nil)
-	if err != nil {
-		return err
-	}
-	req.Header.Add("Connection", "Keep-Alive")
-	resp, err := client.HTTPClient.Get(client.Address + path)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	bytesData, err := ioutil.ReadAll(resp.Body)
-	logrus.Debug(string(bytesData))
-	return json.Unmarshal(bytesData, respS)
-}
-
 // GetSessionConfig 获取Session的设置
 func (client *Client) GetSessionConfig(session string) (*SessionConfig, error) {
 	var respS SessionConfig
@@ -173,4 +133,64 @@ func (client *Client) GetManagers(qq int64) (*[]int64, error) {
 		return nil, err
 	}
 	return &respS, nil
+}
+
+// 用于内部的Post请求
+func (client *Client) httpPost(path string, postBody interface{}, respS interface{}) error {
+	bytesData, err := json.Marshal(postBody)
+	if err != nil {
+		return fmt.Errorf("json marshal failed, path=%v, postBody=%v, err=%v", path, postBody, err)
+	}
+
+	req, err := http.NewRequest("POST", client.Address+path, bytes.NewReader(bytesData))
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Content-Type", "application/json; charset=utf-8")
+	req.Header.Add("Connection", "Keep-Alive")
+
+	resp, err := client.HTTPClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("status code!=200, but is %v", resp.StatusCode)
+	}
+
+	bytesData, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("readall from body err=%v", err)
+	}
+
+	// logrus.Debug(string(bytesData))
+	return json.Unmarshal(bytesData, respS)
+}
+
+// 用于内部的Get请求
+func (client *Client) httpGet(path string, respS interface{}) error {
+	req, err := http.NewRequest("GET", client.Address+path, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Connection", "Keep-Alive")
+
+	resp, err := client.HTTPClient.Get(client.Address + path)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("status code!=200, but is %v", resp.StatusCode)
+	}
+
+	bytesData, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("readall from body err=%v", err)
+	}
+
+	// logrus.Debug(string(bytesData))
+	return json.Unmarshal(bytesData, respS)
 }
