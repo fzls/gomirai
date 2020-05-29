@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/sirupsen/logrus"
 )
@@ -22,11 +23,11 @@ type Client struct {
 }
 
 // NewMiraiClient 创建一个新的Client
-func NewMiraiClient(address, authKey string) (client *Client) {
+func NewMiraiClient(address, authKey string, timeout time.Duration) (client *Client) {
 	client = &Client{}
 	client.Address = address
 	client.Bots = make(map[int64]*Bot)
-	client.HTTPClient = http.Client{}
+	client.HTTPClient = http.Client{Timeout: timeout}
 	client.authKey = authKey
 	return
 }

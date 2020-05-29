@@ -12,7 +12,7 @@ func TestMain(m *testing.M) {
 	address := "http://127.0.0.1:8080"
 	authKey := "12345678"
 	// 用于进行网络操作的Client
-	client := NewMiraiClient(address, authKey)
+	client := NewMiraiClient(address, authKey, 5*time.Second)
 
 	// 可对Client做出自定义修改，该修改会应用于所有使用该client的网络请求
 	// 如使用Proxy
