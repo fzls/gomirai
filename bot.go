@@ -71,6 +71,25 @@ func (bot *Bot) SendFriendMessage(target, quote int64, msg []Message) (int64, er
 	return respS.MessageID, nil
 }
 
+// SendTempMessage 使用此方法向临时会话对象发送消息
+func (bot *Bot) SendTempMessage(qq int64, group int64, msg []Message) (int64, error) {
+	postBody := make(map[string]interface{})
+	postBody["sessionKey"] = bot.Session
+	postBody["qq"] = qq
+	postBody["group"] = group
+	postBody["messageChain"] = msg
+
+	var respS Response
+	err := bot.Client.httpPost("/sendTempMessage", postBody, &respS)
+	if err != nil {
+		return 0, err
+	}
+	if respS.Code != 0 {
+		return 0, errors.New(respS.Msg)
+	}
+	return respS.MessageID, nil
+}
+
 // SendGroupMessage 使用此方法向指定群发送消息
 func (bot *Bot) SendGroupMessage(target, quote int64, msg []Message) (int64, error) {
 	postBody := make(map[string]interface{})
